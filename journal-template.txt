@@ -1,0 +1,8 @@
+---
+title: journal-%s
+date: %s
+tags:
+  - journal
+---
+
+# Journal - %s

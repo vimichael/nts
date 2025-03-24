@@ -1,0 +1,88 @@
+module Main where
+import System.Environment (getArgs)
+import Data.List
+
+allFlags :: [String]
+allFlags = 
+  [ "tags", "no-insert" ]
+
+allCommands :: [String]
+allCommands = 
+  [ "note", "journal" ]
+
+data Token 
+  = Command String [Token]
+  | Flag String (Maybe String)
+  | Literal String
+  deriving (Show, Eq)
+
+data Error 
+  = NotEnoughArgs
+  | UnknownFlag String
+  | UnknownCommand String
+  | MissingValue String
+  deriving (Eq)
+
+
+instance Show Error where
+  show NotEnoughArgs = "not enough arguments provided. please provide a <cmd> <loc> <title>"
+  show (UnknownFlag f) = "unknown flag: " ++ f
+  show (UnknownCommand c) = "unknown command: " ++ c
+  show (MissingValue c) = c ++ " is missing a command"
+
+-- parses into command, flag, or literal if neither of those
+-- if string looks like a flags "--xxx" but isn't a valid flag,
+-- error is thrown b/c user probably intended for it to be one
+rawToToken :: String -> Either Error Token
+rawToToken str
+  | isCmd str = Right $ Command str []
+  | isFlag str =
+    let flag = extractFlag str
+    in
+      if flag `elem` allFlags then
+        Right $ Flag flag Nothing
+      else
+        Left $ UnknownFlag flag
+  | otherwise = Right $ Literal str
+  where
+    extractFlag ('-':'-':xs) = xs
+    extractFlag ('-':xs) = xs
+    extractFlag s = s
+
+isCmd :: String -> Bool
+isCmd s = s `elem` allCommands
+
+isFlag :: String -> Bool
+isFlag ('-':_) = True
+isFlag _ = False
+
+tokenize :: [String] -> Either Error [Token]
+tokenize tokens = buildTokens tokens []
+  where
+    buildTokens [] acc = Right acc
+    buildTokens (x:xs) acc =
+      case rawToToken x of
+        Left err -> Left err
+        Right token -> buildTokens xs (acc ++ [token])
+
+extractTitle :: [Token] -> (String, [Token])
+extractTitle tokens = 
+  let (titleLiterals, rest) = span isLiteral tokens
+      title = init $ intercalate "-" [s | Literal s <- titleLiterals]
+  in (title, rest) 
+  where
+    isLiteral (Literal _ ) = True
+    isLiteral _ = False
+
+validateArgs :: [String] -> Maybe Error
+-- must have <cmd> <loc> <title> as a minimum
+validateArgs (_:_:_) = Nothing
+validateArgs _ = Just NotEnoughArgs
+
+main :: IO ()
+main = do
+  args <- getArgs
+  case validateArgs args of
+    Just err -> putStrLn $ show err
+    Nothing -> (putStrLn . show . tokenize) args
+  return ()

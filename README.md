@@ -16,3 +16,6 @@ nts journal
 
 ## Roadmap
 - Make logging errors optional with `-v`
+
+## License
+This program is licensed under [MIT](./LICENSE)

@@ -20,9 +20,9 @@ class Helpable a where
   cmdOptions :: a -> [HelpOption]
   cmdDesc :: a -> String
 
-  displayHelp :: a -> IO ()
-  displayHelp cmd = do
-    putStrLn $ "COMMAND: " ++ cmdTitle cmd
-    putStrLn $ "ARGUMENTS: " ++ (show . cmdArgs) cmd
-    putStrLn $ "OPTIONS: " ++ (show . cmdOptions) cmd
-    putStrLn $ "DESC: " ++ cmdDesc cmd
+  displayHelp :: (String -> IO ()) -> a -> IO ()
+  displayHelp logFn cmd = do
+    logFn $ "COMMAND: " ++ cmdTitle cmd
+    logFn $ "ARGUMENTS: " ++ (show . cmdArgs) cmd
+    logFn $ "OPTIONS: " ++ (show . cmdOptions) cmd
+    logFn $ "DESC: " ++ cmdDesc cmd

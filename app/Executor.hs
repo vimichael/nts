@@ -9,38 +9,42 @@ import File (createFilepath, toFilename)
 import Formatting (formatTags, getFormattedDate, journalTitle, toMDTitle)
 import Help
 import Journal (JournalDesc (..))
+import Logger (Logger, logWrite)
 import Note (NoteDesc (..))
 import Parser
 import System.Directory (doesDirectoryExist, doesFileExist)
 import System.FilePath (joinPath)
 import Text.Printf (printf)
 
-execCmd :: Config -> Command -> IO (Maybe Error)
-execCmd cfg (Note n) = writeNote cfg n
-execCmd cfg (Journal j) = writeJournal cfg j
-execCmd _ (Help [cmd]) = do
-  displayHelp cmd >> return Nothing
-execCmd _ (Help cmds) = do
-  mapM_ displayHelpWBreaks cmds
+-- | executes given commamnd and propagates errors
+execCmd :: Config -> Logger -> Command -> IO (Maybe Error)
+execCmd cfg logger (Note n) = writeNote cfg logger n
+execCmd cfg logger (Journal j) = writeJournal cfg logger j
+execCmd _ logger (Help [cmd]) = do
+  (displayHelp (logWrite logger) cmd) >> return Nothing
+execCmd _ logger (Help cmds) = do
+  mapM_ (displayHelpWBreaks logger) cmds
   return Nothing
   where
-    displayHelpWBreaks cmd = do
-      displayHelp cmd
-      putStrLn ""
+    displayHelpWBreaks l cmd = do
+      displayHelp (logWrite l) cmd
+      logWrite logger ""
 
-exeFromArgs :: Config -> [String] -> IO (Maybe Error)
-exeFromArgs cfg args = do
+-- | runs a command from sanitized arguments
+-- | bool flags should be removed and processed beforehand
+exeFromArgs :: Config -> Logger -> [String] -> IO (Maybe Error)
+exeFromArgs cfg logger args = do
   let parseResult = parseArgs args
   case parseResult of
     Left parseErr -> return $ Just parseErr
     Right cmd -> do
-      cmdResult <- execCmd cfg cmd
+      cmdResult <- execCmd cfg logger cmd
       case cmdResult of
         Just cmdErr -> return $ Just cmdErr
         Nothing -> return Nothing
 
-writeNote :: Config -> NoteDesc -> IO (Maybe Error)
-writeNote cfg NoteDesc {..} = do
+writeNote :: Config -> Logger -> NoteDesc -> IO (Maybe Error)
+writeNote cfg logger NoteDesc {..} = do
   contents <- readFile "template.txt"
   formattedDate <- getFormattedDate
   let formattedTags = case tags of
@@ -50,11 +54,11 @@ writeNote cfg NoteDesc {..} = do
       renderedContents =
         printf contents title formattedDate formattedTags (toMDTitle title)
   writeFile filepath renderedContents
-  appendToJournal cfg title
+  appendToJournal cfg logger title
 
-appendToJournal :: Config -> String -> IO (Maybe Error)
-appendToJournal cfg@Config {..} title = do
-  writeJournalResult <- writeJournal cfg JournalDesc
+appendToJournal :: Config -> Logger -> String -> IO (Maybe Error)
+appendToJournal cfg@Config {..} logger title = do
+  writeJournalResult <- writeJournal cfg logger JournalDesc
   case writeJournalResult of
     Just err -> return $ Just err
     Nothing -> do
@@ -65,8 +69,8 @@ appendToJournal cfg@Config {..} title = do
       return Nothing
 
 -- | writes a new journal with template contents it it doesn't exist
-writeJournal :: Config -> JournalDesc -> IO (Maybe Error)
-writeJournal Config {journalPath} _ = do
+writeJournal :: Config -> Logger -> JournalDesc -> IO (Maybe Error)
+writeJournal Config {journalPath} logger _ = do
   dirExists <- doesDirectoryExist journalPath
   if dirExists
     then do
@@ -76,7 +80,7 @@ writeJournal Config {journalPath} _ = do
       fileExists <- doesFileExist path
       case fileExists of
         True -> do
-          putStrLn "journal already exists"
+          logWrite logger "journal already exists"
           return Nothing
         False -> do
           templateContents <- readFile "journal-template.txt"

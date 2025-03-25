@@ -4,17 +4,26 @@ module Main where
 
 import Config (loadConfig)
 import Executor
+import Logger (fromFlags, logErr)
+import Parser (extractBoolFlags)
 import System.Environment (getArgs)
 
 main :: IO ()
 main = do
+  args <- getArgs
+  -- extract flags that are command agnostic
+  -- e.g. verbose/v
+  let (boolFlags, rest) = extractBoolFlags args
+      logger = fromFlags boolFlags
+
+  -- deserialize config
   (cfg, err) <- loadConfig
   case err of
-    Just msg -> putStrLn $ "ERROR WHEN PARSING CONFIG: " ++ msg
+    Just msg -> logErr logger $ "ERROR WHEN PARSING CONFIG: " ++ msg
     Nothing -> return ()
 
-  args <- getArgs
-  exeResult <- exeFromArgs cfg args
+  -- run command
+  exeResult <- exeFromArgs cfg logger rest
   case exeResult of
-    Just exeErr -> putStrLn $ "ERROR WHEN PARSING COMMAND: " ++ show exeErr
+    Just exeErr -> logErr logger $ "ERROR WHEN PARSING COMMAND: " ++ show exeErr
     _ -> return ()

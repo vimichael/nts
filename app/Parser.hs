@@ -1,16 +1,20 @@
 module Parser where
 
+import Data.List (partition)
 import Error
 import Help
 import Journal (JournalDesc (JournalDesc), defaultJournal)
 import Note
 
+-- | all available commands
 data Command
   = Note NoteDesc
   | Journal JournalDesc
   | Help [Command]
   deriving (Show, Eq)
 
+-- | help docs for each command. when a command is added, it must have help
+-- docs
 instance Helpable Command where
   cmdTitle (Help _) = "help"
   cmdTitle (Note n) = cmdTitle n
@@ -31,19 +35,25 @@ instance Helpable Command where
 allCommands :: [Command]
 allCommands = [Note defaultNote, Journal defaultJournal, Help []]
 
+-- | returns true if the command starts with one or more `-`
 isFlag :: String -> Bool
 isFlag ('-' : _) = True
 isFlag _ = False
 
+-- | checks if commmand = flag or -flag or --flag
+-- where flag is the target name of the flag
 matchArgOrFlag :: String -> String -> Bool
 matchArgOrFlag flag arg =
   matchFlag flag arg || flag == arg
 
+-- | checks if name matches flag, omits commands that don't have
+-- `-` prepended
 matchFlag :: String -> String -> Bool
 matchFlag flag ('-' : '-' : xs) = flag == xs
 matchFlag flag ('-' : xs) = flag == xs
 matchFlag _ _ = False
 
+-- | basically partition
 takeWhileAndRemaining :: (a -> Bool) -> [a] -> ([a], [a])
 takeWhileAndRemaining cond li =
   aux cond li []
@@ -56,6 +66,8 @@ takeWhileAndRemaining cond li =
         else
           (reverse acc, x : xs)
 
+-- | extracts and formats the title from a list of arguments succeeding
+-- the location of a note
 extractTitle :: [String] -> Either Error (String, [String])
 extractTitle [] = Left MissingTitle
 extractTitle args =
@@ -64,6 +76,8 @@ extractTitle args =
     (titleList, remaining) ->
       Right (init $ concatMap (\s -> s ++ "-") titleList, remaining)
 
+-- | extracts and collects the tags from all literals succeeding
+-- the `--tags` flag until another flag is reached
 extractTags :: [String] -> Either Error (Maybe [String], [String])
 extractTags [] = Right (Nothing, [])
 extractTags args =
@@ -71,10 +85,18 @@ extractTags args =
     ([], _) -> Left MissingTags
     (tags', remaining) -> Right (Just tags', remaining)
 
+-- | takes all arguments and extracts boolean flags from them,
+-- returning (filtered rest)
+extractBoolFlags :: [String] -> ([String], [String])
+extractBoolFlags args = partition isFlag args
+
+-- | converts sanitized args into a commmand, where
+-- sanitized means they have been stripped of boolean flags
+-- propagates errors from the parsing process
 parseArgs :: [String] -> Either Error Command
 parseArgs [] = Left NotEnoughArgs
-parseArgs ["note"] = Left NotEnoughArgs
 -- create a note
+parseArgs ["note"] = Left NotEnoughArgs
 parseArgs ("note" : arg0 : args)
   | matchArgOrFlag "help" arg0 = Right $ Help [Note defaultNote]
   | otherwise =
@@ -91,10 +113,12 @@ parseArgs ("note" : arg0 : args)
               Left $ case matchFlag "tags" x of
                 True -> Duplicateflag x
                 False -> UnknownFlag x
+-- create a journal
 parseArgs ["journal"] = Right $ Journal JournalDesc
 parseArgs ("journal" : arg0 : _)
   | matchArgOrFlag "help" arg0 = Right $ Help [Journal defaultJournal]
   | otherwise = Left $ TooManyArguments arg0
+-- handle help
 parseArgs (cmd : _) =
   case matchArgOrFlag "help" cmd of
     True -> Right $ Help allCommands

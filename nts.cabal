@@ -47,6 +47,8 @@ extra-doc-files:    CHANGELOG.md
 -- Extra source files to be distributed with the package, such as examples, or a tutorial module.
 -- extra-source-files:
 
+data-files: templates/note-template.txt, templates/journal-template.txt
+
 common warnings
     ghc-options: -Wall
 
@@ -69,6 +71,7 @@ executable nts
       Parser
       Executor
       Logger
+      Paths_nts
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

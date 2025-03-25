@@ -12,6 +12,7 @@ import Journal (JournalDesc (..))
 import Logger (Logger, logWrite)
 import Note (NoteDesc (..))
 import Parser
+import Paths_nts
 import System.Directory (doesDirectoryExist, doesFileExist)
 import System.FilePath (joinPath)
 import Text.Printf (printf)
@@ -45,7 +46,8 @@ exeFromArgs cfg logger args = do
 
 writeNote :: Config -> Logger -> NoteDesc -> IO (Maybe Error)
 writeNote cfg logger NoteDesc {..} = do
-  contents <- readFile "template.txt"
+  tempPath <- getDataFileName "templates/note-template.txt"
+  contents <- readFile tempPath
   formattedDate <- getFormattedDate
   let formattedTags = case tags of
         Just t -> formatTags t
@@ -83,7 +85,8 @@ writeJournal Config {journalPath} logger _ = do
           logWrite logger "journal already exists"
           return Nothing
         False -> do
-          templateContents <- readFile "journal-template.txt"
+          tempPath <- getDataFileName "templates/journal-template.txt"
+          templateContents <- readFile tempPath
           let render = printf templateContents formattedDate formattedDate formattedDate
           writeFile path render
           return Nothing

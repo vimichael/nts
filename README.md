@@ -1,6 +1,8 @@
 # NTS
 A personal note-taking CLI for a hybrid zettelkasten workflow
 
+*WARNING* :: This is experimental Software in very early stages
+
 ## Usage
 ```bash
 # create a note
@@ -15,7 +17,14 @@ nts journal
 - Create daily journals
 
 ## Roadmap
-- Make logging errors optional with `-v`
+- Make logging optional with `-v`
+- inspect notes
+  - fetch by tag
+  - fetch by metadata
+  - intersection of tags
+- Tests!
+- Add to package managers (pacman, homebrew)
+- docs
 
 ## License
 This program is licensed under [MIT](./LICENSE)

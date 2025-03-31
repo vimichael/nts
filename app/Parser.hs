@@ -2,7 +2,7 @@ module Parser where
 
 import Data.List (partition)
 import Error
-import Help
+import qualified Help as H
 import Journal (JournalDesc (JournalDesc), defaultJournal)
 import Note
 
@@ -10,35 +10,24 @@ import Note
 data Command
   = Note NoteDesc
   | Journal JournalDesc
-  | Help [Command]
-  deriving (Show, Eq)
+  | Help H.Help
+  deriving (Show)
 
--- | help docs for each command. when a command is added, it must have help
--- docs
-instance Helpable Command where
-  cmdTitle (Help _) = "help"
-  cmdTitle (Note n) = cmdTitle n
-  cmdTitle (Journal j) = cmdTitle j
-
-  cmdArgs (Help _) = []
-  cmdArgs (Note n) = cmdArgs n
-  cmdArgs (Journal j) = cmdArgs j
-
-  cmdOptions (Help _) = []
-  cmdOptions (Note n) = cmdOptions n
-  cmdOptions (Journal j) = cmdOptions j
-
-  cmdDesc (Help _) = "get help!"
-  cmdDesc (Note n) = cmdDesc n
-  cmdDesc (Journal j) = cmdDesc j
-
-allCommands :: [Command]
-allCommands = [Note defaultNote, Journal defaultJournal, Help []]
+allCommands :: [H.CommandInfo]
+allCommands =
+  [H.getInfo defaultNote, H.getInfo defaultJournal, H.getInfo $ H.Help []]
 
 -- | returns true if the command starts with one or more `-`
 isFlag :: String -> Bool
 isFlag ('-' : _) = True
 isFlag _ = False
+
+isBoolFlag :: String -> Bool
+isBoolFlag s = stripFlag s `elem` ["v"]
+  where
+    stripFlag ('-' : '-' : rest) = rest
+    stripFlag ('-' : rest) = rest
+    stripFlag rest = rest
 
 -- | checks if commmand = flag or -flag or --flag
 -- where flag is the target name of the flag
@@ -88,7 +77,7 @@ extractTags args =
 -- | takes all arguments and extracts boolean flags from them,
 -- returning (filtered rest)
 extractBoolFlags :: [String] -> ([String], [String])
-extractBoolFlags args = partition isFlag args
+extractBoolFlags args = partition (liftA2 (&&) isFlag isBoolFlag) args
 
 -- | converts sanitized args into a commmand, where
 -- sanitized means they have been stripped of boolean flags
@@ -98,7 +87,7 @@ parseArgs [] = Left NotEnoughArgs
 -- create a note
 parseArgs ["note"] = Left NotEnoughArgs
 parseArgs ("note" : arg0 : args)
-  | matchArgOrFlag "help" arg0 = Right $ Help [Note defaultNote]
+  | matchArgOrFlag "help" arg0 = Right $ Help $ H.Help [H.getInfo defaultNote]
   | otherwise =
       case extractTitle args of
         Left err -> Left err
@@ -116,10 +105,10 @@ parseArgs ("note" : arg0 : args)
 -- create a journal
 parseArgs ["journal"] = Right $ Journal JournalDesc
 parseArgs ("journal" : arg0 : _)
-  | matchArgOrFlag "help" arg0 = Right $ Help [Journal defaultJournal]
+  | matchArgOrFlag "help" arg0 = Right $ Help $ H.Help [H.getInfo defaultJournal]
   | otherwise = Left $ TooManyArguments arg0
 -- handle help
 parseArgs (cmd : _) =
   case matchArgOrFlag "help" cmd of
-    True -> Right $ Help allCommands
+    True -> Right $ Help $ H.Help allCommands
     False -> Left $ UnknownCommand cmd

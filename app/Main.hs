@@ -2,9 +2,9 @@
 
 module Main where
 
-import Config (loadConfig)
+import Config (LogBuffer (Info, LogError), loadConfig)
 import Executor
-import Logger (fromFlags, logErr)
+import Logger (fromFlags, logErr, logWriteV)
 import Parser (extractBoolFlags)
 import System.Environment (getArgs)
 
@@ -19,7 +19,8 @@ main = do
   -- deserialize config
   (cfg, err) <- loadConfig
   case err of
-    Just msg -> logErr logger $ "ERROR WHEN PARSING CONFIG: " ++ msg
+    Just (LogError msg) -> logErr logger $ "ERROR WHEN PARSING CONFIG: " ++ msg
+    Just (Info msg) -> logWriteV logger $ "INFO: " ++ msg
     Nothing -> return ()
 
   -- run command

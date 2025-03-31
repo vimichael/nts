@@ -9,10 +9,13 @@ data JournalDesc = JournalDesc
   deriving (Show, Eq)
 
 instance Helpable JournalDesc where
-  cmdTitle _ = "journal"
-  cmdArgs _ = []
-  cmdOptions _ = []
-  cmdDesc _ = "creates a new journal at configured path."
+  getInfo _ =
+    CommandInfo
+      { opts = [],
+        desc = "get help for commands",
+        args = [],
+        title = "help"
+      }
 
 defaultJournal :: JournalDesc
 defaultJournal = JournalDesc

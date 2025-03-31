@@ -15,10 +15,13 @@ data NoteDesc = NoteDesc
   deriving (Show, Eq)
 
 instance Helpable NoteDesc where
-  cmdTitle _ = "note"
-  cmdArgs _ = ["PATH", "TITLE"]
-  cmdOptions _ = [(FlagWArgs "--tags" "tags as args")]
-  cmdDesc _ = "creates a new note and adds an entry to the daily journal."
+  getInfo _ =
+    CommandInfo
+      { title = "note",
+        args = ["PATH", "TITLE"],
+        opts = [(FlagWArgs "--tags" "tags as args")],
+        desc = "creates a new note and adds an entry to the daily journal."
+      }
 
 defaultNote :: NoteDesc
 defaultNote =

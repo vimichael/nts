@@ -26,7 +26,7 @@ data Config
   }
   deriving (Generic, Show)
 
-type ErrorLog = String
+data LogBuffer = Info String | LogError String
 
 instance FromJSON Config where
   parseJSON = withObject "Config" $ \v -> do
@@ -44,7 +44,7 @@ defaultCfg homeDir =
       verbose = False
     }
 
-loadConfig :: IO (Config, Maybe ErrorLog)
+loadConfig :: IO (Config, Maybe LogBuffer)
 loadConfig = do
   home <- getEnv "HOME"
 
@@ -57,11 +57,11 @@ loadConfig = do
         Just cfg -> do
           let updatedJournalLoc = home ++ journalPath cfg
           return (cfg {journalPath = updatedJournalLoc}, Nothing)
-        Nothing -> return (defaultCfg home, Just "failed to parse config")
+        Nothing -> return (defaultCfg home, Just $ LogError "failed to parse config")
 
     -- TODO :: log the exception and notify the user
     Left exc -> do
-      return $ (defaultCfg home, Just $ show exc)
+      return $ (defaultCfg home, Just $ Info $ show exc)
 
 applyBoolFlags :: Config -> [String] -> Config
 applyBoolFlags cfg flags = applyFlag cfg flags

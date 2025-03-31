@@ -1,28 +1,36 @@
 module Help where
 
-data HelpDesc = HelpDesc
-  deriving (Show, Eq)
+data Help = Help [CommandInfo]
+  deriving (Show)
 
-instance Helpable HelpDesc where
-  cmdTitle _ = "help"
-  cmdArgs _ = []
-  cmdOptions _ = []
-  cmdDesc _ = "creates a new journal at configured path."
+instance Helpable Help where
+  getInfo _ =
+    CommandInfo
+      { title = "help",
+        args = [],
+        opts = [],
+        desc = "get help for command(s)"
+      }
 
 data HelpOption
   = Flag String
   | FlagWArgs String String
   deriving (Show)
 
-class Helpable a where
-  cmdTitle :: a -> String
-  cmdArgs :: a -> [String]
-  cmdOptions :: a -> [HelpOption]
-  cmdDesc :: a -> String
+data CommandInfo = CommandInfo
+  { title :: String,
+    args :: [String],
+    opts :: [HelpOption],
+    desc :: String
+  }
+  deriving (Show)
 
-  displayHelp :: (String -> IO ()) -> a -> IO ()
-  displayHelp logFn cmd = do
-    logFn $ "COMMAND: " ++ cmdTitle cmd
-    logFn $ "ARGUMENTS: " ++ (show . cmdArgs) cmd
-    logFn $ "OPTIONS: " ++ (show . cmdOptions) cmd
-    logFn $ "DESC: " ++ cmdDesc cmd
+class Helpable a where
+  getInfo :: a -> CommandInfo
+
+displayHelp :: (String -> IO ()) -> CommandInfo -> IO ()
+displayHelp logFn info = do
+  logFn $ "COMMAND: " ++ title info
+  logFn $ "ARGUMENTS: " ++ (show . args) info
+  logFn $ "OPTIONS: " ++ (show . opts) info
+  logFn $ "DESC: " ++ desc info

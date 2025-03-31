@@ -71,6 +71,7 @@ executable nts
       Parser
       Executor
       Logger
+      Color
       Paths_nts
 
     -- LANGUAGE extensions used by modules in this package.

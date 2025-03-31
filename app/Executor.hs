@@ -7,7 +7,7 @@ import Config
 import Error
 import File (createFilepath, toFilename)
 import Formatting (formatTags, getFormattedDate, journalTitle, toMDTitle)
-import Help
+import qualified Help as H
 import Journal (JournalDesc (..))
 import Logger (Logger, logWrite)
 import Note (NoteDesc (..))
@@ -21,14 +21,14 @@ import Text.Printf (printf)
 execCmd :: Config -> Logger -> Command -> IO (Maybe Error)
 execCmd cfg logger (Note n) = writeNote cfg logger n
 execCmd cfg logger (Journal j) = writeJournal cfg logger j
-execCmd _ logger (Help [cmd]) = do
-  (displayHelp (logWrite logger) cmd) >> return Nothing
-execCmd _ logger (Help cmds) = do
+execCmd _ logger (Help (H.Help [cmd])) = do
+  (H.displayHelp (logWrite logger) cmd) >> return Nothing
+execCmd _ logger (Help (H.Help cmds)) = do
   mapM_ (displayHelpWBreaks logger) cmds
   return Nothing
   where
     displayHelpWBreaks l cmd = do
-      displayHelp (logWrite l) cmd
+      H.displayHelp (logWrite l) cmd
       logWrite logger ""
 
 -- | runs a command from sanitized arguments

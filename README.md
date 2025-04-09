@@ -13,16 +13,15 @@ nts journal
 
 ## Features
 - Create notes with tags
+- Configuration
 - Automatically attach notes to a daily journal
 - Create daily journals
 
 ## Roadmap
-- Make logging optional with `-v`
 - inspect notes
   - fetch by tag
   - fetch by metadata
   - intersection of tags
-- Tests!
 - Add to package managers (pacman, homebrew)
 - docs
 

@@ -112,3 +112,11 @@ parseArgs (cmd : _) =
   case matchArgOrFlag "help" cmd of
     True -> Right $ Help $ H.Help allCommands
     False -> Left $ UnknownCommand cmd
+
+-- | splits cmd line args like `foo=bar` into separate arguments `foo`, `bar`
+splitEqArgs :: [String] -> [String]
+splitEqArgs [] = []
+splitEqArgs (x : xs) =
+  case break (== '=') x of
+    (key, '=' : val) -> key : val : splitEqArgs xs
+    _ -> x : splitEqArgs xs

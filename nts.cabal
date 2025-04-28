@@ -11,7 +11,7 @@ extra-doc-files:    CHANGELOG.md
 
 data-files: 
   templates/note-template.txt, 
-  templates/journal-template.txt
+  templates/journal-template.mustache
 
 common warnings
     ghc-options: -Wall
@@ -41,7 +41,7 @@ executable nts
       directory,
       mustache,
       split,
-      text
+      text,
     hs-source-dirs:   app, lib
     default-language: Haskell2010
 

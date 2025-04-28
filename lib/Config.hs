@@ -71,7 +71,7 @@ loadConfig = do
         Left err -> do
           putStrLn err
           cfg <- defaultCfg home
-          return (cfg, Just $ LogError "failed to parse config")
+          return (cfg, Just $ LogError $ "failed to parse config")
 
     -- TODO :: log the exception and notify the user
     Left exc -> do

@@ -10,7 +10,11 @@ data Error
   | MissingValue String
   | JournalPathNotExists String
   | TooManyArguments String
+  | Foreign String
   deriving (Eq)
+
+intoErr :: (Show a) => a -> Error
+intoErr a' = Foreign $ show a'
 
 instance Show Error where
   show NotEnoughArgs = "not enough arguments provided. please provide a <cmd> <loc> <title>"
@@ -23,3 +27,4 @@ instance Show Error where
   show (JournalPathNotExists path) = "the journal path " ++ path ++ " does not exist"
   show (TooManyArguments lastCorrect) =
     "too many arguments provided. everything after " ++ lastCorrect ++ " should be removed"
+  show (Foreign e) = show e

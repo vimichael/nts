@@ -4,8 +4,9 @@
 module Executor where
 
 import Config
+import Data.Text (pack, unpack)
 import Error
-import File (createFilepath, toFilename)
+import File (createFilepath, expandDir, toFilename)
 import Formatting (formatTags, getFormattedDate, journalTitle, toMDTitle)
 import qualified Help as H
 import Journal (JournalDesc (..))
@@ -15,9 +16,12 @@ import Parser
 import Paths_nts
 import System.Directory (doesDirectoryExist, doesFileExist)
 import System.FilePath (joinPath)
+import Template (DefaultTemplateData (..))
+import Text.Mustache (compileTemplate)
+import Text.Mustache.Render (substitute)
 import Text.Printf (printf)
 
--- | executes given commamnd and propagates errors
+-- | executes given command and propagates errors
 execCmd :: Config -> Logger -> Command -> IO (Maybe Error)
 execCmd cfg logger (Note n) = writeNote cfg logger n
 execCmd cfg logger (Journal j) = writeJournal cfg logger j
@@ -72,7 +76,7 @@ appendToJournal cfg@Config {..} logger title = do
 
 -- | writes a new journal with template contents it it doesn't exist
 writeJournal :: Config -> Logger -> JournalDesc -> IO (Maybe Error)
-writeJournal Config {journalPath} logger _ = do
+writeJournal Config {journalPath, journalTemplate} logger _ = do
   dirExists <- doesDirectoryExist journalPath
   if dirExists
     then do
@@ -85,10 +89,17 @@ writeJournal Config {journalPath} logger _ = do
           logWrite logger "journal already exists"
           return Nothing
         False -> do
-          tempPath <- getDataFileName "templates/journal-template.txt"
-          templateContents <- readFile tempPath
-          let render = printf templateContents formattedDate formattedDate formattedDate
-          writeFile path render
-          return Nothing
+          templateAbsPath <- File.expandDir journalTemplate
+          logWrite logger $ "journal abs path: " ++ templateAbsPath
+          templateContents <- readFile templateAbsPath
+          let template = compileTemplate "journal_template" $ pack templateContents
+          case template of
+            Left err -> return $ Just $ intoErr err
+            Right template' -> do
+              let render = substitute template' DefaultTemplateData {title = formattedDate, date = formattedDate}
+
+              -- let render = printf templateContents formattedDate formattedDate formattedDate
+              writeFile path $ unpack render
+              return Nothing
     else
       return $ Just $ JournalPathNotExists journalPath

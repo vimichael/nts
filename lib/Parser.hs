@@ -1,10 +1,15 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Parser where
 
 import Data.List (partition)
+import Data.List.Split (splitOn)
+import Data.Maybe (catMaybes)
 import Error
 import qualified Help as H
 import Journal (JournalDesc (JournalDesc), defaultJournal)
 import Note
+import Template (TemplateData (..))
 
 -- | all available commands
 data Command
@@ -79,6 +84,20 @@ extractTags args =
 extractBoolFlags :: [String] -> ([String], [String])
 extractBoolFlags args = partition (liftA2 (&&) isFlag isBoolFlag) args
 
+-- | extracts all flags into the first element in the tuple,
+-- leaving the remaining ones in the second item
+extractAllFlags :: [String] -> ([String], [String])
+extractAllFlags args = partition isFlag args
+
+-- | parses "key:value,key2:value2" into ["key":"value","key2":"value2"]
+extractTemplateItems :: String -> TemplateData
+extractTemplateItems arg =
+  TemplateData $ catMaybes $ intoTuple <$> (splitOn [","] [arg])
+  where
+    intoTuple (a : b : _) = Just (a, b)
+    intoTuple [] = Nothing
+    intoTuple [_] = Nothing
+
 -- | converts sanitized args into a commmand, where
 -- sanitized means they have been stripped of boolean flags
 -- propagates errors from the parsing process
@@ -92,12 +111,12 @@ parseArgs ("note" : arg0 : args)
       case extractTitle args of
         Left err -> Left err
         Right (title', []) ->
-          Right $ Note $ NoteDesc {location = arg0, title = title', tags = Nothing}
+          Right $ Note $ NoteDesc {location = arg0, title = title', tags = Nothing, templatePath = noteTemplate}
         Right (title', (_ : xs)) ->
           case extractTags xs of
             Left err -> Left err
             Right (mbTags, []) ->
-              Right $ Note $ NoteDesc {location = arg0, title = title', tags = mbTags}
+              Right $ Note $ NoteDesc {location = arg0, title = title', tags = mbTags, templatePath = noteTemplate}
             Right (_, (x : _)) ->
               Left $ case matchFlag "tags" x of
                 True -> Duplicateflag x

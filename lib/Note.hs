@@ -10,7 +10,8 @@ noteTemplate = "template.txt"
 data NoteDesc = NoteDesc
   { location :: String,
     title :: String,
-    tags :: Maybe [String]
+    tags :: Maybe [String],
+    templatePath :: FilePath
   }
   deriving (Show, Eq)
 
@@ -27,6 +28,7 @@ defaultNote :: NoteDesc
 defaultNote =
   NoteDesc
     { location = ".",
-      title = "",
-      tags = Nothing
+      title = "untitled",
+      tags = Nothing,
+      templatePath = noteTemplate
     }

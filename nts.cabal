@@ -32,12 +32,16 @@ executable nts
       Logger
       Color
       Paths_nts
+      Template
     build-depends:    
       base ^>=4.20.0.0,
       filepath,
       time,
       aeson,
-      directory
+      directory,
+      mustache,
+      split,
+      text
     hs-source-dirs:   app, lib
     default-language: Haskell2010
 

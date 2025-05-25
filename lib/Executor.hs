@@ -60,6 +60,7 @@ writeNote cfg logger NoteDesc {..} = do
       renderedContents =
         printf contents title formattedDate formattedTags (toMDTitle title)
   writeFile filepath renderedContents
+  logWrite logger filepath
   appendToJournal cfg logger title
 
 appendToJournal :: Config -> Logger -> String -> IO (Maybe Error)
@@ -86,7 +87,7 @@ writeJournal Config {journalPath, journalTemplate} logger _ = do
       fileExists <- doesFileExist path
       case fileExists of
         True -> do
-          logWrite logger "journal already exists"
+          -- logWrite logger "journal already exists"
           return Nothing
         False -> do
           templateAbsPath <- File.expandDir journalTemplate

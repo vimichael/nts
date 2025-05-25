@@ -59,7 +59,6 @@ loadConfig = do
   home <- getEnv "HOME"
 
   let configFile = joinPath [home, configPath]
-  putStrLn configFile
   contentsResult <- try @IOException (readFile configFile)
   case contentsResult of
     Right contents -> do
